@@ -15,7 +15,7 @@ import cucumber.api.osgi.TimeoutException;
 
 public class OsgiObjectFactory extends OsgiObjectFactoryBase {
 
-    private BundleContext bundleContext;
+    private final BundleContext bundleContext;
 
     public OsgiObjectFactory(BundleContext bundleContext) {
         this.bundleContext = bundleContext;

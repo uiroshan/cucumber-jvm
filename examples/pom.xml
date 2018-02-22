@@ -17,6 +17,7 @@
         <module>java8-calculator</module>
         <module>java-calculator-testng</module>
         <module>pax-exam</module>
+        <module>tycho</module>
         <module>java-wicket</module>
         <module>java-webbit-websockets-selenium</module>
     </modules>

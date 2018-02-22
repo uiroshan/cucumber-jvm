@@ -564,6 +564,7 @@
         <module>junit</module>
         <module>spring</module>
         <module>osgi</module>
+        <module>pax-exam</module>
         <module>guice</module>
         <module>weld</module>
         <module>openejb</module>

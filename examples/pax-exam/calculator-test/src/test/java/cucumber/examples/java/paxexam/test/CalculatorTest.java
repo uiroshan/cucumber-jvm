@@ -1,27 +1,7 @@
 package cucumber.examples.java.paxexam.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.ops4j.pax.exam.CoreOptions.junitBundles;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
-import static org.ops4j.pax.exam.CoreOptions.options;
-
-import java.util.Collections;
-
-import javax.inject.Inject;
-
-import cucumber.api.java.ObjectFactory;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.Configuration;
-import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.junit.PaxExam;
-import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
-import org.ops4j.pax.exam.spi.reactors.PerMethod;
-import org.ops4j.pax.exam.util.Injector;
-import org.osgi.framework.BundleContext;
-
 import cucumber.api.CucumberOptions;
+import cucumber.api.java.ObjectFactory;
 import cucumber.java.runtime.osgi.OsgiClassFinder;
 import cucumber.java.runtime.osgi.PaxExamObjectFactory;
 import cucumber.runtime.Backend;
@@ -33,6 +13,24 @@ import cucumber.runtime.RuntimeOptionsFactory;
 import cucumber.runtime.io.FileResourceLoader;
 import cucumber.runtime.io.ResourceLoader;
 import cucumber.runtime.java.JavaBackend;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.ops4j.pax.exam.Configuration;
+import org.ops4j.pax.exam.Option;
+import org.ops4j.pax.exam.junit.PaxExam;
+import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
+import org.ops4j.pax.exam.spi.reactors.PerMethod;
+import org.ops4j.pax.exam.util.Injector;
+import org.osgi.framework.BundleContext;
+
+import javax.inject.Inject;
+import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.ops4j.pax.exam.CoreOptions.junitBundles;
+import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
+import static org.ops4j.pax.exam.CoreOptions.options;
 
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerMethod.class)
