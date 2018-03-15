@@ -28,7 +28,7 @@ public class RpnCalculatorStepdefs implements En {
         Then("^the result is (\\d+)$", (Double expected) -> assertEquals(expected, calc.value()));
 
 
-        Before(new String[]{"not @foo"}, (Scenario scenario) -> {
+        Before("not @foo", (Scenario scenario) -> {
             scenario.write("Runs before scenarios *not* tagged with @foo");
         });
 

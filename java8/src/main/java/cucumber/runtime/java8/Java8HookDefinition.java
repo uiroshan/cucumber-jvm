@@ -1,7 +1,5 @@
 package cucumber.runtime.java8;
 
-import static java.util.Arrays.asList;
-
 import cucumber.api.Scenario;
 import cucumber.api.java8.HookBody;
 import cucumber.api.java8.HookNoArgsBody;
@@ -20,21 +18,21 @@ public class Java8HookDefinition implements HookDefinition {
     private final HookBody hookBody;
     private final StackTraceElement location;
 
-    private Java8HookDefinition(String[] tagExpressions, int order, long timeoutMillis, HookBody hookBody, HookNoArgsBody hookNoArgsBody) {
+    private Java8HookDefinition(String tagExpression, int order, long timeoutMillis, HookBody hookBody, HookNoArgsBody hookNoArgsBody) {
         this.order = order;
         this.timeoutMillis = timeoutMillis;
-        this.tagPredicate = new TagPredicate(asList(tagExpressions));
+        this.tagPredicate = new TagPredicate(tagExpression);
         this.hookBody = hookBody;
         this.hookNoArgsBody = hookNoArgsBody;
         this.location = new Exception().getStackTrace()[3];
     }
 
-    public Java8HookDefinition(String[] tagExpressions, int order, long timeoutMillis, HookBody hookBody) {
-        this(tagExpressions, order, timeoutMillis, hookBody, null);
+    public Java8HookDefinition(String tagExpression, int order, long timeoutMillis, HookBody hookBody) {
+        this(tagExpression, order, timeoutMillis, hookBody, null);
     }
 
-    public Java8HookDefinition(String[] tagExpressions, int order, long timeoutMillis, HookNoArgsBody hookNoArgsBody) {
-        this(tagExpressions, order, timeoutMillis, null, hookNoArgsBody);
+    public Java8HookDefinition(String tagExpression, int order, long timeoutMillis, HookNoArgsBody hookNoArgsBody) {
+        this(tagExpression, order, timeoutMillis, null, hookNoArgsBody);
     }
 
     @Override

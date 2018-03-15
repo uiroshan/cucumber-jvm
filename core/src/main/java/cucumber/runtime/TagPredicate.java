@@ -11,15 +11,20 @@ import java.util.List;
 
 
 public class TagPredicate implements PicklePredicate {
-    private final List<Expression> expressions = new ArrayList<Expression>();
-
-    public TagPredicate(List<String> tagExpressions) {
-        if (tagExpressions == null) {
-            return;
+    private static final Expression TRUE = new Expression() {
+        @Override
+        public boolean evaluate(List<String> variables) {
+            return true;
         }
-        TagExpressionParser parser = new TagExpressionParser();
-        for (String tagExpression : tagExpressions) {
-            expressions.add(parser.parse(tagExpression));
+    };
+    private final Expression expression;
+
+    public TagPredicate(String expression) {
+        if(expression.trim().isEmpty()) {
+            this.expression = TRUE;
+        } else {
+            TagExpressionParser parser = new TagExpressionParser();
+            this.expression = parser.parse(expression);
         }
     }
 
@@ -33,12 +38,7 @@ public class TagPredicate implements PicklePredicate {
         for (PickleTag pickleTag : pickleTags) {
             tags.add(pickleTag.getName());
         }
-        for (Expression expression : expressions) {
-            if (!expression.evaluate(tags)) {
-                return false;
-            }
-        }
-        return true;
+        return expression.evaluate(tags);
     }
 
 }

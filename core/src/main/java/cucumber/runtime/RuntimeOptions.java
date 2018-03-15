@@ -60,7 +60,7 @@ public class RuntimeOptions {
     };
 
     private final List<String> glue = new ArrayList<String>();
-    private final List<String> tagFilters = new ArrayList<String>();
+    private String tagExpression;
     private final List<Pattern> nameFilters = new ArrayList<Pattern>();
     private final Map<String, List<Long>> lineFilters = new HashMap<String, List<Long>>();
     private final List<String> featurePaths = new ArrayList<String>();
@@ -128,7 +128,7 @@ public class RuntimeOptions {
     }
 
     private void parse(List<String> args) {
-        List<String> parsedTagFilters = new ArrayList<String>();
+        String parsedTagExpression = null;
         List<Pattern> parsedNameFilters = new ArrayList<Pattern>();
         Map<String, List<Long>> parsedLineFilters = new HashMap<String, List<Long>>();
         List<String> parsedFeaturePaths = new ArrayList<String>();
@@ -152,7 +152,7 @@ public class RuntimeOptions {
                 String gluePath = args.remove(0);
                 parsedGlue.add(gluePath);
             } else if (arg.equals("--tags") || arg.equals("-t")) {
-                parsedTagFilters.add(args.remove(0));
+                parsedTagExpression = args.remove(0);
             } else if (arg.equals("--plugin") || arg.equals("--add-plugin") || arg.equals("-p")) {
                 parsedPluginData.addPluginName(args.remove(0), arg.equals("--add-plugin"));
             } else if (arg.equals("--no-dry-run") || arg.equals("--dry-run") || arg.equals("-d")) {
@@ -184,9 +184,8 @@ public class RuntimeOptions {
                 }
             }
         }
-        if (!parsedTagFilters.isEmpty() || !parsedNameFilters.isEmpty() || !parsedLineFilters.isEmpty() || haveLineFilters(parsedFeaturePaths)) {
-            tagFilters.clear();
-            tagFilters.addAll(parsedTagFilters);
+        if (parsedTagExpression != null || !parsedNameFilters.isEmpty() || !parsedLineFilters.isEmpty() || haveLineFilters(parsedFeaturePaths)) {
+            tagExpression = parsedTagExpression;
             nameFilters.clear();
             nameFilters.addAll(parsedNameFilters);
             lineFilters.clear();
@@ -428,8 +427,8 @@ public class RuntimeOptions {
         return nameFilters;
     }
 
-    public List<String> getTagFilters() {
-        return tagFilters;
+    public String getTagExpression() {
+        return tagExpression;
     }
 
     public Map<String, List<Long>> getLineFilters(ResourceLoader resourceLoader) {

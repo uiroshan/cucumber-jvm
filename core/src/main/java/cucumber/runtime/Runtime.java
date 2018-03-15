@@ -37,6 +37,7 @@ public class Runtime {
     private final List<PicklePredicate> filters;
     private final EventBus bus;
     private final Compiler compiler = new Compiler();
+
     public Runtime(ResourceLoader resourceLoader, ClassFinder classFinder, ClassLoader classLoader, RuntimeOptions runtimeOptions) {
         this(resourceLoader, classLoader, loadBackends(resourceLoader, classFinder), runtimeOptions);
     }
@@ -64,9 +65,9 @@ public class Runtime {
         this.bus = new EventBus(stopWatch);
         this.runner = new Runner(glue, bus, backends, runtimeOptions);
         this.filters = new ArrayList<PicklePredicate>();
-        List<String> tagFilters = runtimeOptions.getTagFilters();
-        if (!tagFilters.isEmpty()) {
-            this.filters.add(new TagPredicate(tagFilters));
+        String tagExpression = runtimeOptions.getTagExpression();
+        if (tagExpression != null) {
+            this.filters.add(new TagPredicate(tagExpression));
         }
         List<Pattern> nameFilters = runtimeOptions.getNameFilters();
         if (!nameFilters.isEmpty()) {

@@ -158,13 +158,13 @@ public class JavaBackend implements Backend, LambdaGlueRegistry {
     void addHook(Annotation annotation, Method method) {
         if (objectFactory.addClass(method.getDeclaringClass())) {
             if (annotation.annotationType().equals(Before.class)) {
-                String[] tagExpressions = ((Before) annotation).value();
+                String tagExpression = ((Before) annotation).value();
                 long timeout = ((Before) annotation).timeout();
-                addBeforeHookDefinition(new JavaHookDefinition(method, tagExpressions, ((Before) annotation).order(), timeout, objectFactory));
+                addBeforeHookDefinition(new JavaHookDefinition(method, tagExpression, ((Before) annotation).order(), timeout, objectFactory));
             } else {
-                String[] tagExpressions = ((After) annotation).value();
+                String tagExpression = ((After) annotation).value();
                 long timeout = ((After) annotation).timeout();
-                addAfterHookDefinition(new JavaHookDefinition(method, tagExpressions, ((After) annotation).order(), timeout, objectFactory));
+                addAfterHookDefinition(new JavaHookDefinition(method, tagExpression, ((After) annotation).order(), timeout, objectFactory));
             }
         }
     }

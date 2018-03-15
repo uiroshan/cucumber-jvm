@@ -21,6 +21,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -62,7 +63,7 @@ public class RuntimeOptionsFactoryTest {
     public void create_with_no_name() throws Exception {
         RuntimeOptionsFactory runtimeOptionsFactory = new RuntimeOptionsFactory(NoName.class);
         RuntimeOptions runtimeOptions = runtimeOptionsFactory.create();
-        assertTrue(runtimeOptions.getTagFilters().isEmpty());
+        assertNull(runtimeOptions.getTagExpression());
         assertTrue(runtimeOptions.getNameFilters().isEmpty());
         assertTrue(runtimeOptions.getLineFilters(mock(ResourceLoader.class)).isEmpty());
     }

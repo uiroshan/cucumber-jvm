@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -55,7 +56,7 @@ public class RuntimeOptionsTest {
     public void assigns_filters_from_tags() {
         RuntimeOptions options = new RuntimeOptions("--tags @keep_this somewhere_else");
         assertEquals(asList("somewhere_else"), options.getFeaturePaths());
-        assertEquals(Arrays.<String>asList("@keep_this"), options.getTagFilters());
+        assertEquals("@keep_this", options.getTagExpression());
     }
 
     @Test
@@ -192,7 +193,7 @@ public class RuntimeOptionsTest {
         Properties properties = new Properties();
         properties.setProperty("cucumber.options", "--tags @clobber_with_this");
         RuntimeOptions runtimeOptions = new RuntimeOptions(new Env(properties), asList("--tags", "@should_be_clobbered"));
-        assertEquals(asList("@clobber_with_this"), runtimeOptions.getTagFilters());
+        assertEquals("@clobber_with_this", runtimeOptions.getTagExpression());
     }
 
     @Test
@@ -200,7 +201,7 @@ public class RuntimeOptionsTest {
         Properties properties = new Properties();
         properties.setProperty("cucumber.options", "path/file.feature:3");
         RuntimeOptions runtimeOptions = new RuntimeOptions(new Env(properties), asList("--tags", "@should_be_clobbered", "--name", "should_be_clobbered"));
-        assertEquals(Collections.<Object>emptyList(), runtimeOptions.getTagFilters());
+        assertNull(runtimeOptions.getTagExpression());
     }
 
     @Test
@@ -208,7 +209,7 @@ public class RuntimeOptionsTest {
         Properties properties = new Properties();
         properties.setProperty("cucumber.options", "@rerun.txt");
         RuntimeOptions runtimeOptions = new RuntimeOptions(new Env(properties), asList("--tags", "@should_be_clobbered", "--name", "should_be_clobbered"));
-        assertEquals(Collections.<Object>emptyList(), runtimeOptions.getTagFilters());
+        assertNull(runtimeOptions.getTagExpression());
     }
 
     @Test
@@ -216,7 +217,7 @@ public class RuntimeOptionsTest {
         Properties properties = new Properties();
         properties.setProperty("cucumber.options", "--strict");
         RuntimeOptions runtimeOptions = new RuntimeOptions(new Env(properties), asList("--tags", "@keep_this"));
-        assertEquals(asList("@keep_this"), runtimeOptions.getTagFilters());
+        assertEquals("@keep_this", runtimeOptions.getTagExpression());
     }
 
     @Test
@@ -249,7 +250,7 @@ public class RuntimeOptionsTest {
         properties.setProperty("cucumber.options", "new newer");
         RuntimeOptions runtimeOptions = new RuntimeOptions(new Env(properties), asList("--tags", "@keep_this", "path/file1.feature:1"));
         assertEquals(asList("new", "newer"), runtimeOptions.getFeaturePaths());
-        assertEquals(asList("@keep_this"), runtimeOptions.getTagFilters());
+        assertEquals("@keep_this", runtimeOptions.getTagExpression());
     }
 
     @Test
