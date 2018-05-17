@@ -3,10 +3,13 @@ package cucumber.runtime;
 import cucumber.api.TypeRegistryConfigurer;
 import cucumber.api.StepDefinitionReporter;
 import cucumber.api.SummaryPrinter;
+import cucumber.api.event.Event;
 import cucumber.api.event.TestRunFinished;
 import cucumber.runner.EventBus;
+import cucumber.runner.EventSink;
 import cucumber.runner.Runner;
 import cucumber.runner.TimeService;
+import cucumber.runtime.io.ClasspathResourceLoader;
 import cucumber.runtime.io.MultiLoader;
 import cucumber.runtime.io.ResourceLoader;
 import cucumber.runtime.model.CucumberFeature;
@@ -37,37 +40,40 @@ public class Runtime {
 
     private final ResourceLoader resourceLoader;
     private final ClassLoader classLoader;
-    private final Runner runner;
+    private final ThreadLocal<Runner> runner = new ThreadLocal<Runner>();
     private final List<PicklePredicate> filters;
     private final EventBus bus;
     private final Compiler compiler = new Compiler();
+    private final Provider<Collection<? extends Backend>> backendProvider;
+    private final Provider<Glue> optionalGlue;
 
     public Runtime(ResourceLoader resourceLoader, ClassFinder classFinder, ClassLoader classLoader, RuntimeOptions runtimeOptions) {
         this(resourceLoader, classLoader, loadBackends(resourceLoader, classFinder, runtimeOptions), runtimeOptions);
     }
 
-    public Runtime(ResourceLoader resourceLoader, ClassLoader classLoader, Collection<? extends Backend> backends, RuntimeOptions runtimeOptions) {
-        this(resourceLoader, classLoader, backends, runtimeOptions, TimeService.SYSTEM, null);
+    public Runtime(ResourceLoader resourceLoader, ClassLoader classLoader, Provider<Collection<? extends Backend>> backendProvider, RuntimeOptions runtimeOptions) {
+        this(resourceLoader, classLoader, backendProvider, runtimeOptions, TimeService.SYSTEM, new Provider<Glue>() {
+            @Override
+            public Glue get() {
+                return new RuntimeGlue();
+            }
+        });
     }
 
-    public Runtime(ResourceLoader resourceLoader, ClassLoader classLoader, Collection<? extends Backend> backends,
-                   RuntimeOptions runtimeOptions, Glue optionalGlue) {
-        this(resourceLoader, classLoader, backends, runtimeOptions, TimeService.SYSTEM, optionalGlue);
+    public Runtime(ResourceLoader resourceLoader, ClassLoader classLoader, Provider<Collection<? extends Backend>> backendProvider,
+                   RuntimeOptions runtimeOptions, Provider<Glue> optionalGlue) {
+        this(resourceLoader, classLoader, backendProvider, runtimeOptions, TimeService.SYSTEM, optionalGlue);
     }
 
-    public Runtime(ResourceLoader resourceLoader, ClassLoader classLoader, Collection<? extends Backend> backends,
-                   RuntimeOptions runtimeOptions, TimeService stopWatch, Glue optionalGlue) {
-        if (backends.isEmpty()) {
-            throw new CucumberException("No backends were found. Please make sure you have a backend module on your CLASSPATH.");
-        }
+    public Runtime(ResourceLoader resourceLoader, ClassLoader classLoader, Provider<Collection<? extends Backend>> backendProvider,
+                   RuntimeOptions runtimeOptions, TimeService stopWatch, Provider<Glue> optionalGlue) {
+        this.backendProvider = backendProvider;
+        this.optionalGlue = optionalGlue;
         this.resourceLoader = resourceLoader;
         this.classLoader = classLoader;
         this.runtimeOptions = runtimeOptions;
-        final Glue glue;
-        glue = optionalGlue == null ? new RuntimeGlue() : optionalGlue;
         this.stats = new Stats(runtimeOptions.isMonochrome());
         this.bus = new EventBus(stopWatch);
-        this.runner = new Runner(glue, bus, backends, runtimeOptions);
         this.filters = new ArrayList<PicklePredicate>();
         List<String> tagFilters = runtimeOptions.getTagFilters();
         if (!tagFilters.isEmpty()) {
@@ -87,18 +93,74 @@ public class Runtime {
         runtimeOptions.setEventBus(bus);
     }
 
-    private static Collection<? extends Backend> loadBackends(ResourceLoader resourceLoader, ClassFinder classFinder, RuntimeOptions runtimeOptions) {
-        Reflections reflections = new Reflections(classFinder);
-        TypeRegistryConfigurer typeRegistryConfigurer = reflections.instantiateExactlyOneSubclass(TypeRegistryConfigurer.class, MultiLoader.packageName(runtimeOptions.getGlue()), new Class[0], new Object[0], new DefaultTypeRegistryConfiguration());
-        TypeRegistry typeRegistry = new TypeRegistry(typeRegistryConfigurer.locale());
-        typeRegistryConfigurer.configureTypeRegistry(typeRegistry);
-        return reflections.instantiateSubclasses(Backend.class, singletonList("cucumber.runtime"), new Class[]{ResourceLoader.class, TypeRegistry.class}, new Object[]{resourceLoader, typeRegistry});
+    public Runtime(ClasspathResourceLoader classpathResourceLoader, ClassLoader classLoader, final List<Backend> backends, RuntimeOptions runtimeOptions) {
+        this(classpathResourceLoader, classLoader, new Provider<Collection<? extends Backend>>() {
+            @Override
+            public Collection<? extends Backend> get() {
+                return backends;
+            }
+        }, runtimeOptions);
+    }
+
+    public Runtime(ClasspathResourceLoader resourceLoader, ClassLoader classLoader, final List<Backend> backends, RuntimeOptions runtimeOptions, TimeService timeService, final RuntimeGlue glue) {
+        this(resourceLoader, classLoader, new Provider<Collection<? extends Backend>>() {
+            @Override
+            public Collection<? extends Backend> get() {
+                return backends;
+            }
+        }, runtimeOptions, timeService, new Provider<Glue>() {
+            @Override
+            public Glue get() {
+                return glue;
+            }
+        });
+    }
+
+    public Runtime(ResourceLoader resourceLoader, ClassLoader classLoader, final Collection<Backend> backends, RuntimeOptions runtimeOptions) {
+        this(resourceLoader, classLoader, new Provider<Collection<? extends Backend>>() {
+            @Override
+            public Collection<? extends Backend> get() {
+                return backends;
+            }
+        }, runtimeOptions);
+    }
+
+    public Runtime(ResourceLoader resourceLoader, ClassLoader classLoader, final Collection<Backend> backends, RuntimeOptions runtimeOptions, final RuntimeGlue glue) {
+        this(resourceLoader, classLoader, new Provider<Collection<? extends Backend>>() {
+            @Override
+            public Collection<? extends Backend> get() {
+                return backends;
+            }
+        }, runtimeOptions, new Provider<Glue>() {
+            @Override
+            public Glue get() {
+                return glue;
+            }
+        });
+    }
+
+    private static Provider<Collection<? extends Backend>> loadBackends(final ResourceLoader resourceLoader, final ClassFinder classFinder, final RuntimeOptions runtimeOptions) {
+        return new Provider<Collection<? extends Backend>>() {
+            @Override
+            public Collection<? extends Backend> get() {
+                Reflections reflections = new Reflections(classFinder);
+                TypeRegistryConfigurer typeRegistryConfigurer = reflections.instantiateExactlyOneSubclass(TypeRegistryConfigurer.class, MultiLoader.packageName(runtimeOptions.getGlue()), new Class[0], new Object[0], new DefaultTypeRegistryConfiguration());
+                TypeRegistry typeRegistry = new TypeRegistry(typeRegistryConfigurer.locale());
+                typeRegistryConfigurer.configureTypeRegistry(typeRegistry);
+                return reflections.instantiateSubclasses(Backend.class, singletonList("cucumber.runtime"), new Class[]{ResourceLoader.class, TypeRegistry.class}, new Object[]{resourceLoader, typeRegistry});
+            }
+        };
+    }
+
+    //TODO: Remove
+    public Glue getGlue() {
+        return getRunner().getGlue();
     }
 
     /**
      * This is the main entry point. Used from CLI, but not from JUnit.
      */
-    public void run() throws IOException {
+    public void run() {
         // Make sure all features parse before initialising any reporters/formatters
         List<CucumberFeature> features = runtimeOptions.cucumberFeatures(resourceLoader, bus);
 
@@ -117,14 +179,14 @@ public class Runtime {
     }
 
     public void reportStepDefinitions(StepDefinitionReporter stepDefinitionReporter) {
-        runner.reportStepDefinitions(stepDefinitionReporter);
+        getRunner().reportStepDefinitions(stepDefinitionReporter);
     }
 
     public void runFeature(CucumberFeature feature) {
         List<PickleEvent> pickleEvents = compileFeature(feature);
         for (PickleEvent pickleEvent : pickleEvents) {
             if (matchesFilters(pickleEvent)) {
-                runner.runPickle(pickleEvent);
+                getRunner().runPickle(pickleEvent);
             }
         }
     }
@@ -167,15 +229,46 @@ public class Runtime {
         return undefinedStepsTracker.getSnippets();
     }
 
-    public Glue getGlue() {
-        return runner.getGlue();
-    }
-
     public EventBus getEventBus() {
         return bus;
     }
 
     public Runner getRunner() {
-        return runner;
+        Runner runner = this.runner.get();
+        if (runner != null) {
+            return runner;
+        }
+
+        Collection<? extends Backend> backends = backendProvider.get();
+        if (backends.isEmpty()) {
+            throw new CucumberException("No backendProvider were found. Please make sure you have a backend module on your CLASSPATH.");
+        }
+
+        EventBus sink = new FlushBus(bus);
+        return new Runner(optionalGlue.get(), sink, backends, runtimeOptions);
     }
+
+    public class FlushBus extends EventBus {
+        private final List<Event> events = new ArrayList<Event>();
+
+        private EventBus parent;
+
+        FlushBus(EventBus bus) {
+            super(bus);
+            this.parent = bus;
+        }
+
+        @Override
+        public void send(Event event) {
+            super.send(event);
+            events.add(event);
+        }
+
+        public void flush(){
+            parent.sendAll(events);
+            events.clear();
+        }
+
+    }
+
 }

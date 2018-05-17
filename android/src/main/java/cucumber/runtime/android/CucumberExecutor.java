@@ -164,13 +164,13 @@ public final class CucumberExecutor {
         throw new CucumberException("No CucumberOptions annotation");
     }
 
-    private Collection<? extends Backend> createBackends() {
+    private Collection<Backend> createBackends() {
         final Reflections reflections = new Reflections(classFinder);
         final ObjectFactory delegateObjectFactory = ObjectFactoryLoader.loadObjectFactory(classFinder, Env.INSTANCE.get(ObjectFactory.class.getName()));
         final AndroidObjectFactory objectFactory = new AndroidObjectFactory(delegateObjectFactory, instrumentation);
         final TypeRegistryConfigurer typeRegistryConfigurer = reflections.instantiateExactlyOneSubclass(TypeRegistryConfigurer.class, MultiLoader.packageName(runtimeOptions.getGlue()), new Class[0], new Object[0], new DefaultTypeRegistryConfiguration());
         final TypeRegistry typeRegistry = new TypeRegistry(typeRegistryConfigurer.locale());
         typeRegistryConfigurer.configureTypeRegistry(typeRegistry);
-        return singletonList(new JavaBackend(objectFactory, classFinder, typeRegistry));
+        return singletonList((Backend)new JavaBackend(objectFactory, classFinder, typeRegistry));
     }
 }

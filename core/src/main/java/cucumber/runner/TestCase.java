@@ -31,7 +31,7 @@ class TestCase implements cucumber.api.TestCase {
         this.dryRun = dryRun;
     }
 
-    void run(EventBus bus) {
+    void run(EventSink bus) {
         boolean skipNextStep = this.dryRun;
         Long startTime = bus.getTime();
         bus.send(new TestCaseStarted(startTime, this));

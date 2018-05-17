@@ -13,6 +13,7 @@ public class ShoppingStepdefs {
 
     @Given("the following groceries:")
     public void the_following_groceries(List<Grocery> groceries) {
+        System.out.println("JShop:" + Thread.currentThread().getName());
         for (Grocery grocery : groceries) {
             calc.push(grocery.price.value);
             calc.push("+");

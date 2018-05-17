@@ -14,6 +14,7 @@ public class DateStepdefs {
 
     @Given("today is {iso-date}")
     public void today_is(Date date) {
+        System.out.println("Date Thread:" + Thread.currentThread().getName());
         calculator = new DateCalculator(date);
     }
 

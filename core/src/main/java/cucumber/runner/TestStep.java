@@ -33,7 +33,7 @@ abstract class TestStep implements cucumber.api.TestStep {
         return stepDefinitionMatch.getCodeLocation();
     }
 
-    Result run(EventBus bus, String language, Scenario scenario, boolean skipSteps) {
+    Result run(EventSink bus, String language, Scenario scenario, boolean skipSteps) {
         Long startTime = bus.getTime();
         bus.send(new TestStepStarted(startTime, this));
         Result.Type status;

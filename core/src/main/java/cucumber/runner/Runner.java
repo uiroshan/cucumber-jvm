@@ -2,6 +2,7 @@ package cucumber.runner;
 
 import cucumber.api.HookType;
 import cucumber.api.StepDefinitionReporter;
+import cucumber.api.event.EventPublisher;
 import cucumber.api.event.SnippetsSuggestedEvent;
 import cucumber.runtime.AmbiguousPickleStepDefinitionsMatch;
 import cucumber.runtime.AmbiguousStepDefinitionsException;
@@ -44,6 +45,10 @@ public class Runner implements UnreportedStepExecutor {
             backend.setUnreportedStepExecutor(this);
         }
 
+    }
+
+    public EventBus getBus() {
+        return bus;
     }
 
     //TODO: Maybe this should go into the cucumber step execution model and it should return the result of that execution!

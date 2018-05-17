@@ -40,7 +40,7 @@ class PickleStepTestStep extends TestStep implements cucumber.api.PickleStepTest
     }
 
     @Override
-    Result run(EventBus bus, String language, Scenario scenario, boolean skipSteps) {
+    Result run(EventSink bus, String language, Scenario scenario, boolean skipSteps) {
         boolean skipNextStep = skipSteps;
         List<Result> results = new ArrayList<Result>();
 

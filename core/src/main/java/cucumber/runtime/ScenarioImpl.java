@@ -5,6 +5,7 @@ import cucumber.api.Scenario;
 import cucumber.api.event.EmbedEvent;
 import cucumber.api.event.WriteEvent;
 import cucumber.runner.EventBus;
+import cucumber.runner.EventSink;
 import gherkin.events.PickleEvent;
 import gherkin.pickles.Pickle;
 import gherkin.pickles.PickleLocation;
@@ -27,9 +28,9 @@ public class ScenarioImpl implements Scenario {
     private final String scenarioName;
     private final String scenarioId;
     private final List<Integer> scenarioLines;
-    private final EventBus bus;
+    private final EventSink bus;
 
-    public ScenarioImpl(EventBus bus, PickleEvent pickleEvent) {
+    public ScenarioImpl(EventSink bus, PickleEvent pickleEvent) {
         this.bus = bus;
         Pickle pickle = pickleEvent.pickle;
         this.tags = pickle.getTags();

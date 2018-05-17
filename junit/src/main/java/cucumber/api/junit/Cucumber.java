@@ -22,6 +22,7 @@ import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.ParentRunner;
 import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.RunnerScheduler;
 import org.junit.runners.model.Statement;
 
 import java.io.IOException;
@@ -54,33 +55,30 @@ import java.util.List;
  * @see CucumberOptions
  */
 public class Cucumber extends ParentRunner<FeatureRunner> {
-    private final JUnitReporter jUnitReporter;
     private final List<FeatureRunner> children = new ArrayList<FeatureRunner>();
     private final Runtime runtime;
     private final Formatter formatter;
+    private final RuntimeOptions runtimeOptions;
 
     /**
      * Constructor called by JUnit.
      *
      * @param clazz the class with the @RunWith annotation.
-     * @throws java.io.IOException                         if there is a problem
      * @throws org.junit.runners.model.InitializationError if there is another problem
      */
-    public Cucumber(Class clazz) throws InitializationError, IOException {
+    public Cucumber(Class clazz) throws InitializationError {
         super(clazz);
         ClassLoader classLoader = clazz.getClassLoader();
         Assertions.assertNoCucumberAnnotatedMethods(clazz);
 
         RuntimeOptionsFactory runtimeOptionsFactory = new RuntimeOptionsFactory(clazz);
-        RuntimeOptions runtimeOptions = runtimeOptionsFactory.create();
+        runtimeOptions = runtimeOptionsFactory.create();
 
         ResourceLoader resourceLoader = new MultiLoader(classLoader);
         ClassFinder classFinder = new ResourceLoaderClassFinder(resourceLoader, classLoader);
         runtime = new Runtime(resourceLoader, classFinder, classLoader, runtimeOptions);
         formatter = runtimeOptions.formatter(classLoader);
-        final JUnitOptions junitOptions = new JUnitOptions(runtimeOptions.getJunitOptions());
         final List<CucumberFeature> cucumberFeatures = runtimeOptions.cucumberFeatures(resourceLoader, runtime.getEventBus());
-        jUnitReporter = new JUnitReporter(runtime.getEventBus(), runtimeOptions.isStrict(), junitOptions);
         addChildren(cucumberFeatures);
     }
 
@@ -114,10 +112,11 @@ public class Cucumber extends ParentRunner<FeatureRunner> {
 
     private void addChildren(List<CucumberFeature> cucumberFeatures) throws InitializationError {
         for (CucumberFeature cucumberFeature : cucumberFeatures) {
-            FeatureRunner featureRunner = new FeatureRunner(cucumberFeature, runtime, jUnitReporter);
+            FeatureRunner featureRunner = new FeatureRunner(cucumberFeature, runtime, runtimeOptions);
             if (!featureRunner.isEmpty()) {
                 children.add(featureRunner);
             }
         }
     }
+
 }

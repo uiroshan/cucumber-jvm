@@ -1,6 +1,11 @@
 package cucumber.runtime.junit;
 
+import cucumber.api.event.Event;
+import cucumber.runner.EventBus;
 import cucumber.runner.Runner;
+import cucumber.runner.TimeService;
+import cucumber.runtime.Runtime;
+import cucumber.runtime.RuntimeOptions;
 import gherkin.events.PickleEvent;
 import gherkin.pickles.PickleLocation;
 import gherkin.pickles.PickleStep;
@@ -10,10 +15,10 @@ import org.junit.runners.ParentRunner;
 import org.junit.runners.model.InitializationError;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 
 
 class PickleRunners {
@@ -27,28 +32,29 @@ class PickleRunners {
 
     }
 
-    static PickleRunner withStepDescriptions(cucumber.runner.Runner runner, PickleEvent pickleEvent, JUnitReporter jUnitReporter) throws InitializationError {
-        return new WithStepDescriptions(runner, pickleEvent, jUnitReporter);
+    static PickleRunner withStepDescriptions(Runtime runner, PickleEvent pickleEvent, RuntimeOptions runtimeOptions, JUnitOptions jUnitOptions) throws InitializationError {
+        return new WithStepDescriptions(runner, pickleEvent, runtimeOptions, jUnitOptions);
     }
 
-
-    static PickleRunner withNoStepDescriptions(String featureName, cucumber.runner.Runner runner, PickleEvent pickleEvent, JUnitReporter jUnitReporter) throws InitializationError {
-        return new NoStepDescriptions(featureName, runner, pickleEvent, jUnitReporter);
+    static PickleRunner withNoStepDescriptions(String featureName, Runtime runtime, PickleEvent pickleEvent, RuntimeOptions runtimeOptions, JUnitOptions jUnitOptions) {
+        return new NoStepDescriptions(featureName, runtime, pickleEvent, runtimeOptions, jUnitOptions);
     }
-
 
     static class WithStepDescriptions extends ParentRunner<PickleStep> implements PickleRunner {
-        private final Runner runner;
+        private final Runtime runtime;
         private final PickleEvent pickleEvent;
-        private final JUnitReporter jUnitReporter;
+        private final RuntimeOptions runtimeOptions;
+        private final JUnitOptions jUnitOptions;
         private final Map<PickleStep, Description> stepDescriptions = new HashMap<PickleStep, Description>();
         private Description description;
 
-        WithStepDescriptions(Runner runner, PickleEvent pickleEvent, JUnitReporter jUnitReporter) throws InitializationError {
+
+        public WithStepDescriptions(Runtime runtime, PickleEvent pickleEvent, RuntimeOptions runtimeOptions, JUnitOptions jUnitOptions) throws InitializationError {
             super(null);
-            this.runner = runner;
+            this.runtime = runtime;
             this.pickleEvent = pickleEvent;
-            this.jUnitReporter = jUnitReporter;
+            this.runtimeOptions = runtimeOptions;
+            this.jUnitOptions = jUnitOptions;
         }
 
         @Override
@@ -58,7 +64,7 @@ class PickleRunners {
 
         @Override
         public String getName() {
-            return getPickleName(pickleEvent, jUnitReporter.useFilenameCompatibleNames());
+            return getPickleName(pickleEvent, jUnitOptions.filenameCompatibleNames());
         }
 
         @Override
@@ -77,7 +83,7 @@ class PickleRunners {
             Description description = stepDescriptions.get(step);
             if (description == null) {
                 String testName;
-                if (jUnitReporter.useFilenameCompatibleNames()) {
+                if (jUnitOptions.filenameCompatibleNames()) {
                     testName = makeNameFilenameCompatible(step.getText());
                 } else {
                     testName = step.getText();
@@ -90,9 +96,13 @@ class PickleRunners {
 
         @Override
         public void run(final RunNotifier notifier) {
+            Runner runner = runtime.getRunner();
+            Runtime.FlushBus bush = (Runtime.FlushBus) runner.getBus();
+            JUnitReporter jUnitReporter = new JUnitReporter(bush, runtimeOptions.isStrict(), jUnitOptions);
             jUnitReporter.startExecutionUnit(this, notifier);
             // This causes runChild to never be called, which seems OK.
             runner.runPickle(pickleEvent);
+//            bush.flush();
         }
 
         @Override
@@ -107,23 +117,26 @@ class PickleRunners {
 
     static final class NoStepDescriptions implements PickleRunner {
         private final String featureName;
-        private final cucumber.runner.Runner runner;
+        private final Runtime runtime;
         private final PickleEvent pickleEvent;
-        private final JUnitReporter jUnitReporter;
+        private final RuntimeOptions runtimeOptions;
+        private final JUnitOptions jUnitOptions;
         private Description description;
 
-        NoStepDescriptions(String featureName, cucumber.runner.Runner runner, PickleEvent pickleEvent, JUnitReporter jUnitReporter) throws InitializationError {
+
+        public NoStepDescriptions(String featureName, Runtime runtime, PickleEvent pickleEvent, RuntimeOptions runtimeOptions, JUnitOptions jUnitOptions) {
             this.featureName = featureName;
-            this.runner = runner;
+            this.runtime = runtime;
             this.pickleEvent = pickleEvent;
-            this.jUnitReporter = jUnitReporter;
+            this.runtimeOptions = runtimeOptions;
+            this.jUnitOptions = jUnitOptions;
         }
 
         @Override
         public Description getDescription() {
             if (description == null) {
-                String className = createName(featureName, jUnitReporter.useFilenameCompatibleNames());
-                String name = getPickleName(pickleEvent, jUnitReporter.useFilenameCompatibleNames());
+                String className = createName(featureName, jUnitOptions.filenameCompatibleNames());
+                String name = getPickleName(pickleEvent, jUnitOptions.filenameCompatibleNames());
                 description = Description.createTestDescription(className, name, new PickleId(pickleEvent));
             }
             return description;
@@ -136,9 +149,30 @@ class PickleRunners {
 
         @Override
         public void run(final RunNotifier notifier) {
+            Runner runner = runtime.getRunner();
+            Runtime.FlushBus bus = (Runtime.FlushBus) runner.getBus();
+            JUnitReporter jUnitReporter = new JUnitReporter(bus, runtimeOptions.isStrict(), jUnitOptions);
             jUnitReporter.startExecutionUnit(this, notifier);
             runner.runPickle(pickleEvent);
+//            bus.flush();
         }
+    }
+
+    private static final class Store extends EventBus {
+
+        private final List<Event> events = new ArrayList<Event>();
+
+        Store(TimeService stopWatch) {
+            super(stopWatch);
+        }
+
+        @Override
+        public void send(Event event) {
+            super.send(event);
+            events.add(event);
+        }
+
+
     }
 
     private static String getPickleName(PickleEvent pickleEvent, boolean useFilenameCompatibleNames) {

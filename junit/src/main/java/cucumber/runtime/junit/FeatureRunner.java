@@ -5,6 +5,7 @@ import static cucumber.runtime.junit.PickleRunners.withStepDescriptions;
 
 import cucumber.runtime.CucumberException;
 import cucumber.runtime.Runtime;
+import cucumber.runtime.RuntimeOptions;
 import cucumber.runtime.junit.PickleRunners.PickleRunner;
 import cucumber.runtime.model.CucumberFeature;
 import gherkin.ast.Feature;
@@ -15,6 +16,7 @@ import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.ParentRunner;
 import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.Statement;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -26,10 +28,10 @@ public class FeatureRunner extends ParentRunner<PickleRunner> {
     private final CucumberFeature cucumberFeature;
     private Description description;
 
-    public FeatureRunner(CucumberFeature cucumberFeature, Runtime runtime, JUnitReporter jUnitReporter) throws InitializationError {
+    public FeatureRunner(CucumberFeature cucumberFeature, Runtime runtime, RuntimeOptions runtimeOptions) throws InitializationError {
         super(null);
         this.cucumberFeature = cucumberFeature;
-        buildFeatureElementRunners(runtime, jUnitReporter);
+        buildFeatureElementRunners(runtime, runtimeOptions);
     }
 
     @Override
@@ -68,12 +70,7 @@ public class FeatureRunner extends ParentRunner<PickleRunner> {
         child.run(notifier);
     }
 
-    @Override
-    public void run(RunNotifier notifier) {
-        super.run(notifier);
-    }
-
-    private void buildFeatureElementRunners(Runtime runtime, JUnitReporter jUnitReporter) {
+    private void buildFeatureElementRunners(Runtime runtime, RuntimeOptions runtimeOptions) {
         Feature feature = cucumberFeature.getGherkinFeature().getFeature();
         if (feature == null) {
             return;
@@ -86,13 +83,14 @@ public class FeatureRunner extends ParentRunner<PickleRunner> {
         for (PickleEvent pickleEvent : pickleEvents) {
             if (runtime.matchesFilters(pickleEvent)) {
                 try {
-                    if(jUnitReporter.stepNotifications()) {
+                    JUnitOptions jUnitOptions = new JUnitOptions(runtimeOptions.getJunitOptions());
+                    if(jUnitOptions.stepNotifications()) {
                         PickleRunner picklePickleRunner;
-                        picklePickleRunner = withStepDescriptions(runtime.getRunner(), pickleEvent, jUnitReporter);
+                        picklePickleRunner = withStepDescriptions(runtime, pickleEvent, runtimeOptions, jUnitOptions);
                         children.add(picklePickleRunner);
                     } else {
                         PickleRunner picklePickleRunner;
-                        picklePickleRunner = withNoStepDescriptions(feature.getName(), runtime.getRunner(), pickleEvent, jUnitReporter);
+                        picklePickleRunner = withNoStepDescriptions(feature.getName(), runtime, pickleEvent, runtimeOptions, jUnitOptions);
                         children.add(picklePickleRunner);
                     }
                 } catch (InitializationError e) {

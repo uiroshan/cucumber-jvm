@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EventBus implements EventPublisher {
+public class EventBus implements EventPublisher, EventSink {
     private final TimeService stopWatch;
     private Map<Class<? extends Event>, List<EventHandler>> handlers = new HashMap<Class<? extends Event>, List<EventHandler>>();
 
@@ -17,27 +17,40 @@ public class EventBus implements EventPublisher {
         this.stopWatch = stopWatch;
     }
 
+    public EventBus(EventBus bus) {
+        this(bus.stopWatch);
+    }
+
+    @Override
     public Long getTime() {
         return stopWatch.time();
     }
 
-    public void send(Event event) {
+    @Override
+    public synchronized void send(Event event) {
         if (handlers.containsKey(event.getClass())) {
             for (EventHandler handler : handlers.get(event.getClass())) {
                 //noinspection unchecked: protected by registerHandlerFor
+                System.out.println(event);
                 handler.receive(event);
             }
         }
     }
 
     @Override
-    public <T extends Event> void registerHandlerFor(Class<T> eventType, EventHandler<T> handler) {
+    public synchronized <T extends Event> void registerHandlerFor(Class<T> eventType, EventHandler<T> handler) {
         if (handlers.containsKey(eventType)) {
             handlers.get(eventType).add(handler);
         } else {
             List<EventHandler> list = new ArrayList<EventHandler>();
             list.add(handler);
             handlers.put(eventType, list);
+        }
+    }
+
+    public synchronized void sendAll(List<Event> events) {
+        for(Event event : events){
+            send(event);
         }
     }
 }

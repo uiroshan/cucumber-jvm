@@ -15,7 +15,9 @@ public class RpnCalculatorStepdefs {
     private RpnCalculator calc;
 
     @Given("a calculator I just turned on")
-    public void a_calculator_I_just_turned_on() {
+    public void a_calculator_I_just_turned_on() throws InterruptedException {
+        System.out.println("Calc Thread:" + Thread.currentThread().getName());
+        Thread.sleep((long) (Math.random() * 1000));
         calc = new RpnCalculator();
     }
 
