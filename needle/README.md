@@ -5,4 +5,4 @@ Implements an ObjectFactory that instantiates glue code via [needle](http://need
 This allows easy configurable dependency injection without relying on a full blown DI
 container and automatic mocking of all not explicitly specified dependencies. 
 
-See [needle tutorial](http://needle.spree.de/tutorial) for more information.
+See [needle tutorial](http://needle.spree.de/tutorial.html) for more information.
